@@ -3,50 +3,36 @@
 namespace App\Http\Controllers;
 
 use App\Models\PersonalAccessToken;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class PersonalAccessTokenController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * List all tokens for the authenticated user (token hash hidden).
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        $tokens = Auth::user()
+            ->personalAccessTokens()
+            ->select(['id', 'user_id', 'last_used', 'created_at', 'updated_at'])
+            ->latest()
+            ->get();
+
+        return response()->json($tokens);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Revoke a specific token. Owner only.
      */
-    public function store(Request $request)
+    public function destroy(PersonalAccessToken $personalAccessToken): JsonResponse
     {
-        //
+        if ($personalAccessToken->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $personalAccessToken->delete();
+
+        return response()->json(['message' => 'Token revoked successfully.']);
     }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(PersonalAccessToken $personalAccessToken)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, PersonalAccessToken $personalAccessToken)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(PersonalAccessToken $personalAccessToken)
-    {
-        //
-    }
-
-    //TODO: implement personal access token controller
-
 }
