@@ -9,22 +9,26 @@ use Illuminate\Database\Eloquent\Model;
 class Poll extends Model
 {
     use HasUuids;
+
     protected $table = 'polls';
     protected $primaryKey = 'id';
     public $incrementing = false;
     protected $keyType = 'string';
 
-
     protected $fillable = [
         'user_id',
         'title',
         'status',
+        'start_time',
+        'end_time',
     ];
 
-    protected function casts()
+    protected function casts(): array
     {
         return [
             'status' => PollStatus::class,
+            'start_time' => 'datetime',
+            'end_time' => 'datetime',
         ];
     }
 
@@ -42,5 +46,4 @@ class Poll extends Model
     {
         return $this->hasMany(Vote::class, 'poll_uuid');
     }
-
 }

@@ -19,9 +19,11 @@ class PollController extends Controller
     {
         $polls = Auth::user()
             ->polls()
-            ->with(['options' => function ($query) {
-                $query->withCount('votes');
-            }])
+            ->with([
+                'options' => function ($query) {
+                    $query->withCount('votes');
+                }
+            ])
             ->latest()
             ->get();
 
@@ -37,11 +39,15 @@ class PollController extends Controller
             'title' => 'required|string|max:255',
             'options' => 'required|array|min:2',
             'options.*' => 'required|string|max:255',
+            'start_time' => 'nullable|date',
+            'end_time' => 'nullable|date|after_or_equal:start_time',
         ]);
 
         $poll = DB::transaction(function () use ($validated) {
             $poll = Auth::user()->polls()->create([
                 'title' => $validated['title'],
+                'start_time' => $validated['start_time'] ?? null,
+                'end_time' => $validated['end_time'] ?? null,
             ]);
 
             foreach ($validated['options'] as $optionValue) {
@@ -59,15 +65,17 @@ class PollController extends Controller
      */
     public function show(Poll $poll): JsonResponse
     {
-        $poll->load(['options' => function ($query) {
-            $query->withCount('votes');
-        }]);
+        $poll->load([
+            'options' => function ($query) {
+                $query->withCount('votes');
+            }
+        ]);
 
         return response()->json($poll);
     }
 
     /**
-     * Update a poll (title and/or status). Owner only.
+     * Update a poll (title, status, start_time, end_time). Owner only.
      */
     public function update(Request $request, Poll $poll): JsonResponse
     {
@@ -78,6 +86,8 @@ class PollController extends Controller
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'status' => ['sometimes', 'required', Rule::enum(PollStatus::class)],
+            'start_time' => 'sometimes|nullable|date',
+            'end_time' => 'sometimes|nullable|date|after_or_equal:start_time',
         ]);
 
         $poll->update($validated);
