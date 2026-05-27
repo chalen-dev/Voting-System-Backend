@@ -7,6 +7,7 @@ use App\Models\Poll;
 use App\Models\Vote;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class VoteController extends Controller
 {
@@ -38,18 +39,33 @@ class VoteController extends Controller
 
         $poll = Poll::findOrFail($validated['poll_uuid']);
 
+        // Check poll status
         if ($poll->status !== PollStatus::OPEN) {
             return response()->json(['message' => 'This poll is closed.'], 422);
         }
 
-        $option = $poll->options()->where('id', $validated['option_id'])->first();
+        // Check start_time — poll hasn't started yet
+        if ($poll->start_time && Carbon::now()->lt($poll->start_time)) {
+            return response()->json([
+                'message' => 'This poll has not started yet. It opens at ' . $poll->start_time->toDateTimeString(),
+            ], 422);
+        }
 
-        if (! $option) {
+        // Check end_time — poll has already ended
+        if ($poll->end_time && Carbon::now()->gt($poll->end_time)) {
+            return response()->json([
+                'message' => 'This poll has already ended at ' . $poll->end_time->toDateTimeString(),
+            ], 422);
+        }
+
+        // Check option belongs to this poll
+        $option = $poll->options()->where('id', $validated['option_id'])->first();
+        if (!$option) {
             return response()->json(['message' => 'Option does not belong to this poll.'], 422);
         }
 
+        // Check duplicate vote by IP
         $ipHash = hash('sha256', $request->ip());
-
         $existingVote = Vote::where('poll_uuid', $validated['poll_uuid'])
             ->where('ip_hash', $ipHash)
             ->first();
