@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PersonalAccessToken;
+use App\Models\Option;
 use Illuminate\Http\Request;
 
-class PersonalAccessTokenController extends Controller
+class OptionController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -26,7 +26,7 @@ class PersonalAccessTokenController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(PersonalAccessToken $personalAccessToken)
+    public function show(Option $option)
     {
         //
     }
@@ -34,7 +34,7 @@ class PersonalAccessTokenController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, PersonalAccessToken $personalAccessToken)
+    public function update(Request $request, Option $option)
     {
         //
     }
@@ -42,11 +42,10 @@ class PersonalAccessTokenController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(PersonalAccessToken $personalAccessToken)
+    public function destroy(Option $option)
     {
         //
     }
 
-    //TODO: implement personal access token controller
-
+    //TODO: implement option controller
 }

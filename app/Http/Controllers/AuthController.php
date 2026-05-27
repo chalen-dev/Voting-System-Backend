@@ -45,4 +45,5 @@ class AuthController extends Controller
     {
         //
     }
+    //TODO: implement auth controller
 }

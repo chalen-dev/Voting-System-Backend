@@ -33,4 +33,14 @@ class Poll extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function options()
+    {
+        return $this->hasMany(Option::class, 'poll_uuid');
+    }
+
+    public function votes()
+    {
+        return $this->hasMany(Vote::class, 'poll_uuid');
+    }
+
 }
