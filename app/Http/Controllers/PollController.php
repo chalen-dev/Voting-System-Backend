@@ -2,50 +2,100 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PollStatus;
 use App\Models\Poll;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class PollController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * List all polls for the authenticated user.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        $polls = Auth::user()
+            ->polls()
+            ->with(['options' => function ($query) {
+                $query->withCount('votes');
+            }])
+            ->latest()
+            ->get();
+
+        return response()->json($polls);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Create a new poll with options.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
-        //
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'options' => 'required|array|min:2',
+            'options.*' => 'required|string|max:255',
+        ]);
+
+        $poll = DB::transaction(function () use ($validated) {
+            $poll = Auth::user()->polls()->create([
+                'title' => $validated['title'],
+            ]);
+
+            foreach ($validated['options'] as $optionValue) {
+                $poll->options()->create(['value' => $optionValue]);
+            }
+
+            return $poll->load('options');
+        });
+
+        return response()->json($poll, 201);
     }
 
     /**
-     * Display the specified resource.
+     * Display a single poll with its options and vote counts.
      */
-    public function show(Poll $poll)
+    public function show(Poll $poll): JsonResponse
     {
-        //
+        $poll->load(['options' => function ($query) {
+            $query->withCount('votes');
+        }]);
+
+        return response()->json($poll);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update a poll (title and/or status). Owner only.
      */
-    public function update(Request $request, Poll $poll)
+    public function update(Request $request, Poll $poll): JsonResponse
     {
-        //
+        if ($poll->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'status' => ['sometimes', 'required', Rule::enum(PollStatus::class)],
+        ]);
+
+        $poll->update($validated);
+
+        return response()->json($poll);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete a poll. Owner only. Cascades to options and votes.
      */
-    public function destroy(Poll $poll)
+    public function destroy(Poll $poll): JsonResponse
     {
-        //
-    }
+        if ($poll->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
 
-    //TODO: implement poll controller
+        $poll->delete();
+
+        return response()->json(['message' => 'Poll deleted successfully.']);
+    }
 }
