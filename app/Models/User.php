@@ -6,12 +6,11 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -22,11 +21,35 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+
+    protected $table = 'users';
+    protected $primaryKey = 'id';
+    protected $fillable =
+        [
+            'first_name',
+            'last_name',
+            'email'
+        ];
+    protected $hidden =
+        [
+            'password',
+            'remember_token'
+        ];
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function personalAccessTokens()
+    {
+        return $this->hasMany(PersonalAccessToken::class);
+    }
+
+    public function polls()
+    {
+        return $this->hasMany(Poll::class);
     }
 }
