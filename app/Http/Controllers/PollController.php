@@ -108,4 +108,8 @@ class PollController extends Controller
 
         return response()->json(['message' => 'Poll deleted successfully.']);
     }
+
+    // TODO: Implement bulkStatus and bulkDestroy methods.
+    // Use Auth::user()->polls()->whereIn('id', $ids) to ensure ownership
+    // and perform state changes in a single database query.
 }
