@@ -109,7 +109,52 @@ class PollController extends Controller
         return response()->json(['message' => 'Poll deleted successfully.']);
     }
 
-    // TODO: Implement bulkStatus and bulkDestroy methods.
-    // Use Auth::user()->polls()->whereIn('id', $ids) to ensure ownership
-    // and perform state changes in a single database query.
+    /**
+     * Bulk update the status of multiple polls. Owner only.
+     * 
+     * POST /polls/bulk-status
+     * Body: { "ids": ["uuid1", "uuid2"], "status": "open" }
+     */
+    public function bulkStatus(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'required|uuid|exists:polls,id',
+            'status' => ['required', Rule::enum(PollStatus::class)],
+        ]);
+
+        $updated = Auth::user()
+            ->polls()
+            ->whereIn('id', $validated['ids'])
+            ->update(['status' => $validated['status']]);
+
+        return response()->json([
+            'message' => "{$updated} poll(s) updated to {$validated['status']}.",
+            'updated' => $updated,
+        ]);
+    }
+
+    /**
+     * Bulk delete multiple polls. Owner only. Cascades to options and votes.
+     * 
+     * DELETE /polls/bulk-destroy
+     * Body: { "ids": ["uuid1", "uuid2"] }
+     */
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'required|uuid|exists:polls,id',
+        ]);
+
+        $deleted = Auth::user()
+            ->polls()
+            ->whereIn('id', $validated['ids'])
+            ->delete();
+
+        return response()->json([
+            'message' => "{$deleted} poll(s) deleted successfully.",
+            'deleted' => $deleted,
+        ]);
+    }
 }
