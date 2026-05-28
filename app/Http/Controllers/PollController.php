@@ -37,10 +37,13 @@ class PollController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'options' => 'required|array|min:2',
+            // Make options optional so the frontend can just "Initialize" the poll
+            'options' => 'sometimes|array',
             'options.*' => 'required|string|max:255',
             'start_time' => 'nullable|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
+            // Add status to the validation rules so Laravel doesn't ignore it
+            'status' => ['sometimes', 'required', Rule::enum(PollStatus::class)],
         ]);
 
         $poll = DB::transaction(function () use ($validated) {
@@ -48,10 +51,15 @@ class PollController extends Controller
                 'title' => $validated['title'],
                 'start_time' => $validated['start_time'] ?? null,
                 'end_time' => $validated['end_time'] ?? null,
+                // Ensure the status is mapped to the database (defaults to 'open')
+                'status' => $validated['status'] ?? 'open',
             ]);
 
-            foreach ($validated['options'] as $optionValue) {
-                $poll->options()->create(['value' => $optionValue]);
+            // Only create options if they were actually provided
+            if (!empty($validated['options'])) {
+                foreach ($validated['options'] as $optionValue) {
+                    $poll->options()->create(['value' => $optionValue]);
+                }
             }
 
             return $poll->load('options');
@@ -111,7 +119,7 @@ class PollController extends Controller
 
     /**
      * Bulk update the status of multiple polls. Owner only.
-     * 
+     *
      * POST /polls/bulk-status
      * Body: { "ids": ["uuid1", "uuid2"], "status": "open" }
      */
@@ -136,7 +144,7 @@ class PollController extends Controller
 
     /**
      * Bulk delete multiple polls. Owner only. Cascades to options and votes.
-     * 
+     *
      * DELETE /polls/bulk-destroy
      * Body: { "ids": ["uuid1", "uuid2"] }
      */
