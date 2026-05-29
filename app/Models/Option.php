@@ -11,6 +11,7 @@ class Option extends Model
     protected $fillable = [
         'poll_uuid',
         'value',
+        'image_path',
     ];
 
     public function poll()
