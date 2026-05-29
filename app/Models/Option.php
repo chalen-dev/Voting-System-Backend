@@ -3,16 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Option extends Model
 {
     protected $table = 'options';
     protected $primaryKey = 'id';
+
     protected $fillable = [
         'poll_uuid',
         'value',
         'image_path',
     ];
+
+    // Automatically append the custom 'image_url' attribute to JSON responses
+    protected $appends = ['image_url'];
 
     public function poll()
     {
@@ -23,18 +28,19 @@ class Option extends Model
     {
         return $this->hasMany(Vote::class, 'option_id');
     }
-}
 
-/**
- * TODO: IMPLEMENT IMAGE SUPPORT FOR POLL OPTIONS
- * * DB / BACKEND:
- * [ ] Add `image_path` (VARCHAR 255, nullable) to `options` table.
- * [ ] Create an upload endpoint/logic to handle Multipart/Form-Data.
- * [ ] Update the Poll creation/update API to map image paths to options.
- * * FRONTEND:
- * [ ] Update `Option` interface in `poll.ts` to include `image_path?: string`.
- * [ ] Modify `PollTabs` form to include a file input for each option.
- * [ ] Update `usePollMutations` to handle FormData if uploading files directly,
- * otherwise ensure image URLs are sent in the payload.
- * [ ] Update `PollTable` or create a new `PollPreview` to render option images.
- */
+    /**
+     * Get the full URL path to the image.
+     */
+    protected function imageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function (mixed $value, array $attributes) {
+                // If image_path exists, return the full public URL, otherwise null
+                return !empty($attributes['image_path'])
+                    ? asset('storage/' . $attributes['image_path'])
+                    : null;
+            }
+        );
+    }
+}
