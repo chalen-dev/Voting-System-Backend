@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignUuid('poll_uuid')->constrained('polls')->cascadeOnDelete();
             $table->string('value');
+            $table->string('image_path', 255)->nullable();
             $table->timestamps();
         });
     }
