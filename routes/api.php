@@ -1,4 +1,3 @@
-
 <?php
 
 use App\Http\Controllers\AuthController;
@@ -44,10 +43,14 @@ Route::middleware(AuthTokenMiddleware::class)->group(function () {
     // Poll Management (CRUD)
     Route::get('/polls', [PollController::class, 'index']);
     Route::post('/polls', [PollController::class, 'store']);
-    Route::put('/polls/{poll}', [PollController::class, 'update']);
-    Route::delete('/polls/{poll}', [PollController::class, 'destroy']);
+
+    // Bulk routes MUST be before {poll} wildcard
     Route::post('/polls/bulk-status', [PollController::class, 'bulkStatus']);
     Route::delete('/polls/bulk-destroy', [PollController::class, 'bulkDestroy']);
+
+    // Single poll routes AFTER
+    Route::put('/polls/{poll}', [PollController::class, 'update']);
+    Route::delete('/polls/{poll}', [PollController::class, 'destroy']);
 
     // Option Management
     Route::get('/options', [OptionController::class, 'index']);
